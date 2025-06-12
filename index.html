@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>HLS Player with Token Proxy</title>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.0"></script>
+  <style>
+    body {
+      background: #111;
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding: 40px;
+    }
+    video {
+      width: 80%;
+      max-width: 720px;
+      height: auto;
+      border: 2px solid #fff;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎧 Radio Tétouan - HLS Player</h1>
+  <video id="video" controls autoplay></video>
+  <p id="status">Loading stream...</p>
+
+  <script>
+    const video = document.getElementById('video');
+    const status = document.getElementById('status');
+
+    async function loadStream() {
+      try {
+        // Replace with your real Worker URL
+        const res = await fetch('https://shy-frost-4efe.elmokhtar-mchich.workers.dev/token');
+        if (!res.ok) throw new Error('Failed to fetch token');
+        const streamUrl = await res.text();
+
+        if (Hls.isSupported()) {
+          const hls = new Hls();
+          hls.loadSource(streamUrl);
+          hls.attachMedia(video);
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            status.textContent = '✅ Stream loaded!';
+          });
+          hls.on(Hls.Events.ERROR, (_, data) => {
+            console.error('HLS error:', data);
+            status.textContent = '⚠️ HLS error: ' + data.details;
+          });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = streamUrl;
+          video.addEventListener('loadedmetadata', () => {
+            status.textContent = '✅ Native stream loaded!';
+          });
+        } else {
+          status.textContent = '❌ HLS not supported in this browser.';
+        }
+      } catch (err) {
+        console.error(err);
+        status.textContent = '❌ Error: ' + err.message;
+      }
+    }
+
+    loadStream();
+  </script>
+
+</body>
+</html>
+
+
+
