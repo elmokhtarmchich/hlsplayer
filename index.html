@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>HLS Player with Token Proxy</title>
+  <meta charset="UTF-8" />
+  <title>HLS Player with Token</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.0"></script>
   <style>
     body {
@@ -18,56 +18,52 @@
       height: auto;
       border: 2px solid #fff;
       border-radius: 8px;
+      background: black;
     }
   </style>
 </head>
 <body>
 
-  <h1>🎧 Radio Tétouan - HLS Player</h1>
+  <h1>🎧 Radio Tétouan - Live Stream</h1>
   <video id="video" controls autoplay></video>
-  <p id="status">Loading stream...</p>
+  <p id="status">⏳ Loading stream...</p>
 
   <script>
     const video = document.getElementById('video');
     const status = document.getElementById('status');
 
-    async function loadStream() {
+    async function startStream() {
       try {
-        // Replace with your real Worker URL
         const res = await fetch('https://shy-frost-4efe.elmokhtar-mchich.workers.dev/token');
-        if (!res.ok) throw new Error('Failed to fetch token');
-        const streamUrl = await res.text();
+        if (!res.ok) throw new Error('Failed to fetch tokenized URL');
+
+        const signedUrl = await res.text();
 
         if (Hls.isSupported()) {
           const hls = new Hls();
-          hls.loadSource(streamUrl);
+          hls.loadSource(signedUrl);
           hls.attachMedia(video);
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
             status.textContent = '✅ Stream loaded!';
           });
           hls.on(Hls.Events.ERROR, (_, data) => {
-            console.error('HLS error:', data);
-            status.textContent = '⚠️ HLS error: ' + data.details;
+            console.error('HLS.js error:', data);
+            status.textContent = '⚠️ Stream error: ' + data.details;
           });
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-          video.src = streamUrl;
-          video.addEventListener('loadedmetadata', () => {
-            status.textContent = '✅ Native stream loaded!';
-          });
+          video.src = signedUrl;
+          status.textContent = '✅ Native playback (Safari)';
         } else {
-          status.textContent = '❌ HLS not supported in this browser.';
+          status.textContent = '❌ HLS not supported on this browser.';
         }
       } catch (err) {
         console.error(err);
-        status.textContent = '❌ Error: ' + err.message;
+        status.textContent = '❌ Error loading stream: ' + err.message;
       }
     }
 
-    loadStream();
+    startStream();
   </script>
 
 </body>
 </html>
-
-
-
